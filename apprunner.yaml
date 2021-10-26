@@ -1,0 +1,14 @@
+version: 1.0
+runtime: python3
+build:
+ commands:
+  build:
+  - pip install --upgrade pip
+  - pip install -r requirements.txt
+run:
+ env:
+  - name: FLASK_APP
+    value: main_app.py
+ command: flask run --host 0.0.0.0 --port 5000
+ network:
+   port: 5000

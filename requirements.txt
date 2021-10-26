@@ -1,0 +1,4 @@
+flask
+numpy
+xgboost
+boto3
