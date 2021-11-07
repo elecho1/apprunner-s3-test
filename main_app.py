@@ -1,4 +1,5 @@
 from flask import Flask, jsonify, request
+import datetime
 import json
 import numpy as np
 import pickle
@@ -6,9 +7,12 @@ import xgboost as xgb
 import boto3
 
 app = Flask(__name__)
+# コードから参照するXGBoostモデルのパス
 MODEL_PATH = "./artifact/xgboost_model.pickle"
-S3_BUCKET = "apprunner-s3-test"
-JSON_KEY = "response.json"
+
+# リクエストのS3保存先の情報
+S3_BUCKET = "apprunner-s3-test"  # バケット名は全AWS内で一意であるため、別の名前を指定する必要があります。
+S3_DIR = "requests/"
 
 s3 = boto3.resource('s3')
 
@@ -32,6 +36,8 @@ def index():
 # "http://<ドメイン名>/api/v1/predict"へAPI呼び出しを行う際の動作
 @app.route("/api/v1/predict", methods=["POST"])
 def predict():
+    request_time = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9))) #リクエスト時刻
+
     response = {
         "success": False,
         "Content-Type": "application/json"
@@ -43,17 +49,17 @@ def predict():
         response["pred"] = model_predict(feature) # model_predict関数を使ってモデル予測
         response["success"] = True
 
-        r = save_s3(response)
-        print(r)
+        save_s3(request_time, request.get_json(), response)
 
     return jsonify(response)
 
 
-def model_predict(feature):
+# XGBoostモデルによる予測を行う関数
+def model_predict(feature: list) -> list:
     global model
     feature = np.array(feature)
     app.logger.debug(feature.shape)  # HTTPリクエストのfeatureのnp.ndarrayに変換
-    if len(feature.shape) != 2:  # もしデータが1つ（=1次元）であった場合
+    if len(feature.shape) == 1:  # もしデータが1つ、かつ1次元であった場合
         feature = feature.reshape((1, -1))
         
     dfeature = xgb.DMatrix(feature)  # XGBoostのデータ形式に変換 
@@ -63,11 +69,20 @@ def model_predict(feature):
     return pred_list
 
 
-def save_s3(response):
+# リクエストおよびレスポンスをS3に保存する関数
+def save_s3(request_time: datetime.datetime, request: dict, response: dict):
+    content = dict()
+
+    request_time_iso = request_time.isoformat() 
+    content["request_time"] = request_time_iso
+    content["request"] = request
+    content["response"] = response
     text = json.dumps(response)
 
+    JSON_KEY = S3_DIR + request_time_iso + ".json"
+
     obj = s3.Object(S3_BUCKET, JSON_KEY)
-    r = obj.put(Body=text)
+    r = obj.put(Body=json.dumps(content))
     
     return r
 
