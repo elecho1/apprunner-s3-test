@@ -1,9 +1,11 @@
 from flask import Flask, jsonify, request
 import datetime
+import io
 import json
 import numpy as np
 import pickle
 import xgboost as xgb
+import pandas as pd
 import boto3
 
 app = Flask(__name__)
@@ -49,7 +51,7 @@ def predict():
         response["pred"] = model_predict(feature) # model_predict関数を使ってモデル予測
         response["success"] = True
 
-        save_s3(request_time, request.get_json(), response)
+        save_s3(request_time, feature, response["pred"])
 
     return jsonify(response)
 
@@ -69,20 +71,29 @@ def model_predict(feature: list) -> list:
     return pred_list
 
 
-# リクエストおよびレスポンスをS3に保存する関数
-def save_s3(request_time: datetime.datetime, request: dict, response: dict):
-    content = dict()
-
+# リクエストおよびレスポンスを、pd.DataFrame経由でCSVとしてS3に保存する関数
+def save_s3(request_time: datetime.datetime, feature: list, pred: list):
+    # DataFrameに代入するデータの整理
     request_time_iso = request_time.isoformat() 
-    content["request_time"] = request_time_iso
-    content["request"] = request
-    content["response"] = response
-    text = json.dumps(response)
+    sr_pred = pd.Series(pred)
+    
+    # 出力するDataFrameの作成
+    df = pd.DataFrame(feature, columns=['f1', 'f2', 'f3', 'f4', 'f5', 'f6', 'f7', 'f8'])
+    df['pred'] = sr_pred
+    df["request_time"] = request_time_iso
 
-    JSON_KEY = S3_DIR + request_time_iso + ".json"
+    print(df)
 
-    obj = s3.Object(S3_BUCKET, JSON_KEY)
-    r = obj.put(Body=json.dumps(content))
+    # dfを、StringIOのバッファを利用して、CSV化＆文字列化する。（ファイルには出力しない。）
+    ## 参考リンク：https://dev.classmethod.jp/articles/read-csv-file-on-s3-bucket-into-buffer-and-edit-it-with-pandas/
+    buffer_out = io.StringIO()
+    df.to_csv(buffer_out, header=True, index=False)
+    body_out = buffer_out.getvalue()
+
+    FILE_KEY = S3_DIR + request_time_iso + ".csv"
+
+    obj = s3.Object(S3_BUCKET, FILE_KEY)
+    r = obj.put(Body=body_out)
     
     return r
 

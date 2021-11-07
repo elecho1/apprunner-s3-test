@@ -2,3 +2,4 @@ flask
 numpy
 xgboost
 boto3
+pandas
