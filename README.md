@@ -35,33 +35,74 @@ $ curl <App RunnerのデフォルトドメインURL>/api/v1/predict -X POST -H '
 ```
 
 ## ローカルでのセットアップ・動作確認
-* コンテナをビルド・起動します。
-  ```
-  $ docker-compose -f docker/docker-compose.yml up -d
-  ```
-* コンテナが起動しているか確認します。
+1. ローカル環境の環境変数にAWSの認証情報を設定します。（環境変数の設定はセッションごとに行う必要があります。）
+    1. **（すでにAWS CLIを利用されている場合）**
+        AWS CLIに登録されている認証情報をローカル環境の環境変数にコピーします。  
+        ```
+        $ export AWS_ACCESS_KEY_ID=$(aws configure get aws_access_key_id)
+        $ export AWS_SECRET_ACCESS_KEY=$(aws configure get aws_secret_access_key)
+        ```
+        （オプション：必要に応じて）
+        ```
+        $ export AWS_SESSION_TOKEN=$(aws configure get aws_session_token)
+        ```
+    1. **（AWS CLIを利用されていない場合、AWS CLIに認証情報が登録されていない場合）**
+        1. AWS認証情報の取得
+
+            こちらのサイトが参考になります。https://qiita.com/n0bisuke/items/1ea245318283fa118f4a
+
+        1. ローカル環境への環境変数の設定
+
+            ```
+            $ export AWS_ACCESS_KEY_ID=<上記で取得したAWS_ACCESS_KEY_ID>
+            $ export AWS_SECRET_ACCESS_KEY=<上記で取得したAWS_SECRET_ACCESS_KEY>
+            ```
+            （オプション：必要に応じて）
+            ```
+            $ export AWS_SESSION_TOKEN=<必要に応じて利用中のAWS_SESSION_TOKEN>
+            ```
+
+    **※注意：ベストプラクティスとして、AWSの認証情報をソースコードファイルに記述しないでください！**  
+    ファイルにAWS認証情報を記述してしまうとうっかり漏洩してしまうリスクが高まってしまうからです。
+
+1. 上記で設定した認証情報を元に、ローカルでコンテナをセットアップ・起動します。
+    ```
+    $ docker-compose -f docker/docker-compose.yml run \
+    -e AWS_REGION=us-east-1 \
+    -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
+    -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
+    --service-ports \
+    flask
+    ```
+
+1. （オプション）もしコンテナイメージのリビルドが必要な場合は、以下のコマンドを実行してください。
+   ```
+   $ docker-compose -f docker/docker-compose.yml build
+   ```
+
+1. コンテナが起動しているか確認します。
   [localhost:5000](http://localhost:5000/) にアクセスして「XGBoost prediction API with App Runner and flask.」と返ってくれば成功です。
 
-* 同様にローカルでもAPIの確認を行うことができます。こちらも、"App RunnerのデフォルトドメインURL"を"http://localhost:5000"と置き換えてAPIの呼び出しを行うことができます。
+1. 同様にローカルでもAPIの確認を行うことができます。こちらも、"App RunnerのデフォルトドメインURL"を"http://localhost:5000"と置き換えてAPIの呼び出しを行うことができます。
 
-  ```
-  $ curl http://localhost:5000/api/v1/predict -X POST -H 'Content-Type:application/json' -d '{"feature":[1, 1, 1, 1, 1, 1, 1, 1]}'
-  
-  {"Content-Type":"application/json","pred":[1.7686777114868164],"success":true}
-  ```
+    ```
+    $ curl http://localhost:5000/api/v1/predict -X POST -H 'Content-Type:application/json' -d '{"feature":[1, 1, 1, 1, 1, 1, 1, 1]}'
+    
+    {"Content-Type":"application/json","pred":[1.7686777114868164],"success":true}
+    ```
 
-  ```
-  $ curl http://localhost:5000/api/v1/predict -X POST -H 'Content-Type:application/json' -d '{"feature":[[0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5], [1, 1, 1, 1, 1, 1, 1, 1]]}'
-  
-  {"Content-Type":"application/json","pred":[2.6185295581817627,1.7686777114868164],"success":true}
-  ```
-  と、JSONが返ってくれば成功です。
+    ```
+    $ curl http://localhost:5000/api/v1/predict -X POST -H 'Content-Type:application/json' -d '{"feature":[[0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5], [1, 1, 1, 1, 1, 1, 1, 1]]}'
+    
+    {"Content-Type":"application/json","pred":[2.6185295581817627,1.7686777114868164],"success":true}
+    ```
+    と、JSONが返ってくれば成功です。
 
-* コンテナに入って何かコマンドを打ちたい場合
-  ```
-  $ docker exec -it flask /bin/ash
-  ```
-  とコマンドを打って入れます。
+1. （オプション）コンテナに入って何かコマンドを打ちたい場合
+    ```
+    $ docker exec -it flask /bin/ash
+    ```
+    とコマンドを打って入れます。
 
 
 
