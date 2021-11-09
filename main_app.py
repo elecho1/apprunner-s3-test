@@ -62,7 +62,7 @@ def model_predict(feature: list) -> list:
     global model
     feature = np.array(feature)
     app.logger.debug(feature.shape)  # HTTPリクエストのfeatureのnp.ndarrayに変換
-    if len(feature.shape) == 1:  # もしデータが1つ、かつ1次元であった場合
+    if len(feature.shape) == 1:  # もしデータが1つ、かつ1次元であった場合、featureを2次元へ整形
         feature = feature.reshape((1, -1))
         
     dfeature = xgb.DMatrix(feature)  # XGBoostのデータ形式に変換 
@@ -76,6 +76,11 @@ def model_predict(feature: list) -> list:
 def save_s3(request_time: datetime.datetime, feature: list, pred: list):
     # DataFrameに代入するデータの整理
     request_time_iso = request_time.isoformat() 
+
+    feature = np.array(feature)
+    if len(feature.shape) == 1:  # もしデータが1つ、かつ1次元であった場合、featureを2次元へ整形
+        feature = feature.reshape((1, -1))
+    
     sr_pred = pd.Series(pred)
     
     # 出力するDataFrameの作成
@@ -104,7 +109,9 @@ def print_result(request_time: datetime.datetime, feature: list, pred: list):
 
     参考リンク：https://dev.classmethod.jp/articles/how-to-cloudwatch-logs-insights/
     """
-    request_time_iso = request_time.isoformat() 
+    request_time_iso = request_time.isoformat()
+    if check_list_dim(feature) == 1:
+        feature = [feature]
 
     content = dict()
     content["type"] = "RESULT"
@@ -121,6 +128,12 @@ def print_result(request_time: datetime.datetime, feature: list, pred: list):
     print(text)
 
     return
+
+
+def check_list_dim(l: list) -> int:
+    l_np = np.array(l)
+
+    return len(l_np.shape)
 
 if __name__ == "__main__":
     app.run()
