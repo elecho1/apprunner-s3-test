@@ -74,6 +74,7 @@ $ curl <App RunnerのデフォルトドメインURL>/api/v1/predict -X POST -H '
     --service-ports \
     flask
     ```
+    （必要に応じて、`-e AWS_SESSION_TOKEN=$AWS_SESSION_TOKEN \`を追加してください。）
 
 1. （オプション）もしコンテナイメージのリビルドが必要な場合は、以下のコマンドを実行してください。
    ```

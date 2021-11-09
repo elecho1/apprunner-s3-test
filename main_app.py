@@ -52,6 +52,7 @@ def predict():
         response["success"] = True
 
         save_s3(request_time, feature, response["pred"])
+        print_result(request_time, feature, response["pred"])
 
     return jsonify(response)
 
@@ -82,8 +83,6 @@ def save_s3(request_time: datetime.datetime, feature: list, pred: list):
     df['pred'] = sr_pred
     df["request_time"] = request_time_iso
 
-    print(df)
-
     # dfを、StringIOのバッファを利用して、CSV化＆文字列化する。（ファイルには出力しない。）
     ## 参考リンク：https://dev.classmethod.jp/articles/read-csv-file-on-s3-bucket-into-buffer-and-edit-it-with-pandas/
     buffer_out = io.StringIO()
@@ -97,6 +96,31 @@ def save_s3(request_time: datetime.datetime, feature: list, pred: list):
     
     return r
 
+
+def print_result(request_time: datetime.datetime, feature: list, pred: list):
+    """
+    リクエストおよびレスポンスを、CloudWatch分析用にprintする関数。
+    CloudWatch Logs Insightsを用いて分析しやすいよう、json形式の文字列でprintする。
+
+    参考リンク：https://dev.classmethod.jp/articles/how-to-cloudwatch-logs-insights/
+    """
+    request_time_iso = request_time.isoformat() 
+
+    content = dict()
+    content["type"] = "RESULT"
+    content["request_time"] = request_time_iso
+
+    # 予測結果を、特徴量と予測値のペアに整形する
+    predict_list = [{"feature": ftr, "pred": prd} for ftr, prd in zip(feature, pred)]
+    content["predict"] = predict_list
+
+    # json文字列への変換
+    text = json.dumps(content, indent=4, separators=(',', ': '))
+
+    # 結果の表示（そのままCloudWatchへ記録される）
+    print(text)
+
+    return
 
 if __name__ == "__main__":
     app.run()
