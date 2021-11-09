@@ -1,6 +1,7 @@
 from flask import Flask, jsonify, request
 import datetime
 import io
+import sys
 import json
 import numpy as np
 import pickle
@@ -126,7 +127,7 @@ def print_result(request_time: datetime.datetime, feature: list, pred: list):
     text = json.dumps(content)
 
     # 結果の表示（そのままCloudWatchへ記録される）
-    print(text)
+    print(text, file=sys.stderr)
 
     return
 
