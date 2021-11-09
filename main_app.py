@@ -122,7 +122,8 @@ def print_result(request_time: datetime.datetime, feature: list, pred: list):
     content["predict"] = predict_list
 
     # json文字列への変換
-    text = json.dumps(content, indent=4, separators=(',', ': '))
+    # text = json.dumps(content, indent=4, separators=(',', ': '))
+    text = json.dumps(content)
 
     # 結果の表示（そのままCloudWatchへ記録される）
     print(text)
