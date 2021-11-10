@@ -86,15 +86,21 @@ $ curl <App RunnerのデフォルトドメインURL>/api/v1/predict -X POST -H '
 
 1. 同様にローカルでもAPIの確認を行うことができます。こちらも、"App RunnerのデフォルトドメインURL"を"http://localhost:5000"と置き換えてAPIの呼び出しを行うことができます。
 
+    コマンド：
     ```
     $ curl http://localhost:5000/api/v1/predict -X POST -H 'Content-Type:application/json' -d '{"feature":[1, 1, 1, 1, 1, 1, 1, 1]}'
-    
+    ```
+    結果：
+    ```
     {"Content-Type":"application/json","pred":[1.7686777114868164],"success":true}
     ```
 
+    コマンド：
     ```
     $ curl http://localhost:5000/api/v1/predict -X POST -H 'Content-Type:application/json' -d '{"feature":[[0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5], [1, 1, 1, 1, 1, 1, 1, 1]]}'
-    
+    ```
+    結果：
+    ```
     {"Content-Type":"application/json","pred":[2.6185295581817627,1.7686777114868164],"success":true}
     ```
     と、JSONが返ってくれば成功です。
