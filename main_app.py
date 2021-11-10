@@ -127,7 +127,8 @@ def print_result(request_time: datetime.datetime, feature: list, pred: list):
     text = json.dumps(content)
 
     # 結果の表示（そのままCloudWatchへ記録される）
-    print(text, file=sys.stderr)
+    # print(text, file=sys.stderr)
+    print(text, flush=True)
 
     return
 
