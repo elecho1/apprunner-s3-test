@@ -107,7 +107,7 @@ $ curl <App RunnerのデフォルトドメインURL>/api/v1/predict -X POST -H '
 
 1. （オプション）コンテナに入って何かコマンドを打ちたい場合
     ```
-    $ docker exec -it flask /bin/ash
+    $ docker exec -it flask /bin/bash
     ```
     とコマンドを打って入れます。
 
